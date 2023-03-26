@@ -10,9 +10,6 @@ import (
 	"os"
 )
 
-const drupalExampleSimpleRepo = "https://github.com/amazeeio/drupal-example-simple.git"
-const branch = "main"
-
 var targetDirectory string
 var scaffold string
 
@@ -49,7 +46,7 @@ var initCmd = &cobra.Command{
 			log.Fatal(err)
 			os.Exit(1)
 		}
-		//defer cleanRemoveDir(tDir)
+		defer cleanRemoveDir(tDir)
 
 		fmt.Println(tDir)
 
