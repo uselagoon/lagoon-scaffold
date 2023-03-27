@@ -1,13 +1,20 @@
 package cmd
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/go-git/go-git/v5" // with go modules disabled
-	cp "github.com/otiai10/copy"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
+	"html/template"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
+	"path/filepath"
 )
 
 var targetDirectory string
@@ -41,12 +48,12 @@ var initCmd = &cobra.Command{
 
 		//We'll use this when we want to use templates
 		//let's checkout the scaffold into a tmp dir
-		tDir, err := ioutil.TempDir("./", "prefix")
+		tDir, err := ioutil.TempDir(targetDirectory, "prefix")
 		if err != nil {
 			log.Fatal(err)
 			os.Exit(1)
 		}
-		defer cleanRemoveDir(tDir)
+		//defer cleanRemoveDir(tDir)
 
 		fmt.Println(tDir)
 
@@ -66,12 +73,77 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		err = cp.Copy(tDir, targetDirectory)
-		if err != nil {
+		if err = processTemplates(nil, tDir); err != nil {
 			fmt.Println(err)
-			os.Exit(1)
+			return
 		}
+		// For now we're just testing the dir traversal
+		//err = cp.Copy(tDir, targetDirectory)
+		//if err != nil {
+		//	fmt.Println(err)
+		//	os.Exit(1)
+		//}
 	},
+}
+
+func processTemplates(values interface{}, tempDir string) error {
+
+	//we should find a values file in the root
+	valfilename := tempDir + "/values.yml"
+	if _, err := os.Stat(valfilename); errors.Is(err, os.ErrNotExist) {
+		return errors.New(valfilename + " does not exist")
+	}
+
+	valuesDefaults, err := os.ReadFile(valfilename)
+	if err != nil {
+		return err
+	}
+
+	//let's open and edit the values file - this can move into proper survey questions in the future
+
+	prompt := &survey.Editor{
+		Renderer:      survey.Renderer{},
+		Message:       "Shell code snippet",
+		Default:       string(valuesDefaults),
+		Help:          "",
+		Editor:        "",
+		HideDefault:   true,
+		AppendDefault: true,
+		FileName:      "*.yml",
+	}
+	var content string
+	survey.AskOne(prompt, &content)
+
+	var parsedContent interface{}
+	//yam.
+	err = yaml.Unmarshal([]byte(content), &parsedContent)
+	if err != nil {
+		return err
+	}
+
+	err = filepath.WalkDir(tempDir, func(p string, d fs.DirEntry, err error) error {
+		if !d.IsDir() && filepath.Ext(p) == ".tmpl" {
+			templ, err := template.ParseFiles(p)
+			if err != nil {
+				return err
+			}
+			var buf bytes.Buffer
+			err = templ.Execute(&buf, parsedContent)
+			if err != nil {
+				return err
+			}
+			extension := path.Ext(p)
+			outputName := p[:len(p)-len(extension)]
+			//TODO: better permission handling?
+			err = ioutil.WriteFile(outputName, buf.Bytes(), 0644)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	return err
 }
 
 func cleanRemoveDir(dir string) error {
