@@ -98,6 +98,9 @@ var initCmd = &cobra.Command{
 			fmt.Println(err)
 			return
 		}
+
+		showPostMessage(tDir)
+
 		// For now we're just testing the dir traversal
 		err = cp.Copy(tDir, targetDirectory)
 		if err != nil {
@@ -172,6 +175,28 @@ func readValuesFile(tempDir string, noInteraction bool) (interface{}, error) {
 		return nil, err
 	}
 	return parsedContent, err
+}
+
+//func showPreMessage(tempDir string) {
+//	valfilename := tempDir + "/pre-message.txt"
+//	if _, err := os.Stat(valfilename); errors.Is(err, os.ErrNotExist) {
+//		return //no pre-message
+//	}
+//
+//}
+
+func showPostMessage(tempDir string) {
+	valfilename := tempDir + "/.lagoon/post-message.txt"
+	if _, err := os.Stat(valfilename); errors.Is(err, os.ErrNotExist) {
+		return //no post-message
+	}
+
+	text, err := ioutil.ReadFile(valfilename)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Print(string(text))
 }
 
 func cleanRemoveDir(dir string) error {
