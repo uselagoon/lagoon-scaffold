@@ -24,38 +24,69 @@ var scaffold string
 var noInteraction bool
 
 type scaffoldRepo struct {
-	GitRepo string
-	Branch  string
+	GitRepo          string `yaml:"git_repo,omitempty"`
+	Branch           string `yaml:"branch,omitempty"`
+	Description      string `yaml:"description,omitempty"`
+	ShortDescription string `yaml:"shortDescription,omitempty"`
 }
 
 // TODO:
 // Pre/post messages in the scaffold directory to show, for eg, post-init tasks people need to run etc.
 
 var scaffolds = map[string]scaffoldRepo{
-	"laravel":               {GitRepo: "https://github.com/bomoko/lagoon-laravel-dir.git", Branch: "main"},
-	"drupal-example-simple": {GitRepo: "https://github.com/amazeeio/drupal-example-simple.git", Branch: "lagoon-init"},
+	"laravel": {
+		GitRepo:          "https://github.com/bomoko/lagoon-laravel-dir.git",
+		Branch:           "main",
+		ShortDescription: "Will add a minimal set of files to an existing Laravel 10",
+		Description:      "Will add a minimal set of files to an existing Laravel 10",
+	},
+	"drupal-example-simple": {
+		GitRepo:          "https://github.com/amazeeio/drupal-example-simple.git",
+		Branch:           "lagoon-init",
+		ShortDescription: "Pulls and sets up a new Lagoon ready Drupal 10",
+		Description:      "Pulls and sets up a new Lagoon ready Drupal 10",
+	},
+}
+
+func getScaffoldsKeys() []string {
+	var ret []string
+	for k := range scaffolds {
+		ret = append(ret, k)
+	}
+	return ret
+}
+
+func selectScaffold(scaffold *string) error {
+	prompt := survey.Select{
+		Message: "Select a scaffold to run",
+		Options: getScaffoldsKeys(),
+	}
+
+	survey.AskOne(&prompt, scaffold)
+	return nil
 }
 
 var rootCmd = &cobra.Command{
 	Use:   "scaffold",
 	Short: "Lagoon scaffold will pull a new site and fill in the details",
 	Long:  `Lagoon scaffold will pull a new site and fill in the details`,
-}
-
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Lagoon scaffold will pull a new site and fill in the details",
-	Long:  `Lagoon scaffold will pull a new site and fill in the details`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if scaffold == "" && noInteraction {
+			fmt.Println("Please select a scaffold\n\n")
+			cmd.Help()
+			return
+		}
+
 		if scaffold == "" {
-			fmt.Println("Please select a scaffold")
-			os.Exit(1)
+			selectScaffold(&scaffold)
 		}
 
 		repo, ok := scaffolds[scaffold]
 		// If the key exists
 		if !ok {
-			fmt.Printf("Scaffold `%v` does not exist\n", scaffold)
+			fmt.Printf("Scaffold `%v` does not exist\n\n", scaffold)
+			cmd.Help()
+			return
 		}
 
 		//We'll use this when we want to use templates
@@ -218,10 +249,9 @@ var listCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(initCmd)
-	initCmd.PersistentFlags().StringVar(&scaffold, "scaffold", "", "Which scaffold to pull into directory")
-	initCmd.Flags().BoolVar(&noInteraction, "no-interaction", false, "Don't interactively fill in any values for the scaffold - use defaults")
-	initCmd.Flags().StringVar(&targetDirectory, "targetdir", "./", "Directory to check out project into - defaults to current directory")
+	rootCmd.PersistentFlags().StringVar(&scaffold, "scaffold", "", "Which scaffold to pull into directory")
+	rootCmd.Flags().BoolVar(&noInteraction, "no-interaction", false, "Don't interactively fill in any values for the scaffold - use defaults")
+	rootCmd.Flags().StringVar(&targetDirectory, "targetdir", "./", "Directory to check out project into - defaults to current directory")
 }
 
 func Execute() {
