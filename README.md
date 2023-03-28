@@ -1,5 +1,6 @@
 # lagoon-init-prot
 
+*THIS IS NOT A PRODUCTION READY TOOL*
 
 This is a POC tool for Lagoonizing and scaffolding out Lagoon projects.
 
