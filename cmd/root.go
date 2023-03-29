@@ -40,7 +40,7 @@ var scaffolds = map[string]scaffoldRepo{
 		ShortDescription: "Will add a minimal set of files to an existing Laravel 10 installation",
 		Description:      "Will add a minimal set of files to an existing Laravel 10 installation",
 	},
-	"drupal-example-simple": {
+	"drupal-9": {
 		GitRepo:          "https://github.com/lagoon-examples/drupal9-full.git",
 		Branch:           "scaffold",
 		ShortDescription: "Pulls and sets up a new Lagoon ready Drupal 9",
