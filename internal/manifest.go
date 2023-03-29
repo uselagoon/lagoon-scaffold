@@ -3,14 +3,31 @@ package internal
 import (
 	_ "embed"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"net/http"
 )
 
-const manifestUrl = "https://raw.githubusercontent.com/bomoko/lagoon-init/main/assets/scaffolds.yml"
+const manifestUrl = "https://gist.githubusercontent.com/bomoko/161bbeabc6d17d69e7d52f233cce749c/raw/b63685156b54ef9561aff5ed0eb5adcb559c6659/scaffolds.yml"
 
 //go:embed assets/scaffolds.yml
 var defaultScaffolds []byte
 
-func resolveScaffolds() (map[string]ScaffoldRepo, error) {
+func getManifestFromUrl(manifestUrl string) ([]byte, error) {
+	resp, err := http.Get(manifestUrl)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
+func getDefaultScaffold() (map[string]ScaffoldRepo, error) {
 	loader := &ScaffoldLoader{
 		Scaffolds: make([]ScaffoldRepo, 0),
 	}
@@ -20,31 +37,47 @@ func resolveScaffolds() (map[string]ScaffoldRepo, error) {
 		return nil, err
 	}
 
+	return remapScaffoldLoader(loader), nil
+}
+
+func resolveScaffolds(manifestUrl string) map[string]ScaffoldRepo {
+
+	defaultScaffold, err := getDefaultScaffold()
+	if err != nil {
+		panic(err)
+	}
+
+	if manifestUrl == "" {
+		return defaultScaffold
+	}
+
+	scaffolds, err := getManifestFromUrl(manifestUrl)
+	if err != nil {
+		return defaultScaffold
+	}
+
+	loader := &ScaffoldLoader{
+		Scaffolds: make([]ScaffoldRepo, 0),
+	}
+	err = yaml.Unmarshal(scaffolds, loader)
+
+	if err != nil {
+		return defaultScaffold
+	}
+
+	return remapScaffoldLoader(loader)
+}
+
+func remapScaffoldLoader(loader *ScaffoldLoader) map[string]ScaffoldRepo {
 	remapped := make(map[string]ScaffoldRepo)
 	for _, scaffold := range loader.Scaffolds {
 		remapped[scaffold.Name] = scaffold
 	}
-
-	return remapped, nil
+	return remapped
 }
 
 func GetScaffolds() map[string]ScaffoldRepo {
-	return scaffolds
-}
-
-var scaffolds = map[string]ScaffoldRepo{
-	"laravel-init": {
-		GitRepo:          "https://github.com/bomoko/lagoon-laravel-dir.git",
-		Branch:           "main",
-		ShortDescription: "Will add a minimal set of files to an existing Laravel 10 installation",
-		Description:      "Will add a minimal set of files to an existing Laravel 10 installation",
-	},
-	"drupal-9": {
-		GitRepo:          "https://github.com/lagoon-examples/drupal9-full.git",
-		Branch:           "scaffold",
-		ShortDescription: "Pulls and sets up a new Lagoon ready Drupal 9",
-		Description:      "Pulls and sets up a new Lagoon ready Drupal 9",
-	},
+	return resolveScaffolds(manifestUrl)
 }
 
 type ScaffoldRepo struct {

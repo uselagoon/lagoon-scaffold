@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-func Test_resolveScaffolds(t *testing.T) {
+func Test_getDefaultScaffolds(t *testing.T) {
 	tests := []struct {
 		name    string
 		want    map[string]ScaffoldRepo
 		wantErr bool
 	}{
 		{
-			name: "Test resolveScaffolds",
+			name: "Test getDefaultScaffold",
 			want: map[string]ScaffoldRepo{
 				"laravel-init": {
 					Name:             "laravel-init",
@@ -33,13 +33,13 @@ func Test_resolveScaffolds(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := resolveScaffolds()
+			got, err := getDefaultScaffold()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("resolveScaffolds() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getDefaultScaffold() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("resolveScaffolds() got = %v, want %v", got, tt.want)
+				t.Errorf("getDefaultScaffold() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
