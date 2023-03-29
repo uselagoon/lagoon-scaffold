@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"bomoko/lagoon-init/internal"
 	"bytes"
 	"errors"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/go-git/go-git/v5" // with go modules disabled
+	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	cp "github.com/otiai10/copy"
 	"github.com/spf13/cobra"
@@ -23,34 +24,12 @@ var targetDirectory string
 var scaffold string
 var noInteraction bool
 
-type scaffoldRepo struct {
-	GitRepo          string `yaml:"git_repo,omitempty"`
-	Branch           string `yaml:"branch,omitempty"`
-	Description      string `yaml:"description,omitempty"`
-	ShortDescription string `yaml:"shortDescription,omitempty"`
-}
-
 // TODO:
 // Pre/post messages in the scaffold directory to show, for eg, post-init tasks people need to run etc.
 
-var scaffolds = map[string]scaffoldRepo{
-	"laravel-init": {
-		GitRepo:          "https://github.com/bomoko/lagoon-laravel-dir.git",
-		Branch:           "main",
-		ShortDescription: "Will add a minimal set of files to an existing Laravel 10 installation",
-		Description:      "Will add a minimal set of files to an existing Laravel 10 installation",
-	},
-	"drupal-9": {
-		GitRepo:          "https://github.com/lagoon-examples/drupal9-full.git",
-		Branch:           "scaffold",
-		ShortDescription: "Pulls and sets up a new Lagoon ready Drupal 9",
-		Description:      "Pulls and sets up a new Lagoon ready Drupal 9",
-	},
-}
-
 func getScaffoldsKeys() []string {
 	var ret []string
-	for k := range scaffolds {
+	for k := range internal.GetScaffolds() {
 		ret = append(ret, k)
 	}
 	return ret
@@ -61,7 +40,7 @@ func selectScaffold(scaffold *string) error {
 		Message: "Select a scaffold to run",
 		Options: getScaffoldsKeys(),
 		Description: func(value string, index int) string {
-			return scaffolds[value].ShortDescription
+			return internal.GetScaffolds()[value].ShortDescription
 		},
 	}
 
@@ -74,6 +53,9 @@ var rootCmd = &cobra.Command{
 	Short: "Lagoon scaffold will pull a new site and fill in the details",
 	Long:  `Lagoon scaffold will pull a new site and fill in the details`,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		scaffolds := internal.GetScaffolds()
+
 		if scaffold == "" && noInteraction {
 			fmt.Println("Please select a scaffold\n\n")
 			cmd.Help()
@@ -244,7 +226,7 @@ var listCmd = &cobra.Command{
 	Example: "lagoon-init-prot list",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("We currently support the following:")
-		for pagage := range scaffolds {
+		for pagage := range internal.GetScaffolds() {
 			fmt.Println(pagage)
 		}
 	},

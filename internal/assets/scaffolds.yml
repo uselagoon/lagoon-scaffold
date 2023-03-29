@@ -1,0 +1,11 @@
+scaffolds:
+  - name: drupal-9
+    git_repo: https://github.com/lagoon-examples/drupal9-full.git
+    branch: scaffold
+    description: Pulls and sets up a new Lagoon ready Drupal 9
+    shortDescription: Pulls and sets up a new Lagoon ready Drupal 9
+  - name: laravel-init
+    git_repo: https://github.com/bomoko/lagoon-laravel-dir.git
+    branch: main
+    description: Will add a minimal set of files to an existing Laravel 10 installation
+    shortDescription: Will add a minimal set of files to an existing Laravel 10 installation
