@@ -34,17 +34,17 @@ type scaffoldRepo struct {
 // Pre/post messages in the scaffold directory to show, for eg, post-init tasks people need to run etc.
 
 var scaffolds = map[string]scaffoldRepo{
-	"laravel": {
+	"laravel-init": {
 		GitRepo:          "https://github.com/bomoko/lagoon-laravel-dir.git",
 		Branch:           "main",
-		ShortDescription: "Will add a minimal set of files to an existing Laravel 10",
-		Description:      "Will add a minimal set of files to an existing Laravel 10",
+		ShortDescription: "Will add a minimal set of files to an existing Laravel 10 installation",
+		Description:      "Will add a minimal set of files to an existing Laravel 10 installation",
 	},
 	"drupal-example-simple": {
-		GitRepo:          "https://github.com/amazeeio/drupal-example-simple.git",
-		Branch:           "lagoon-init",
-		ShortDescription: "Pulls and sets up a new Lagoon ready Drupal 10",
-		Description:      "Pulls and sets up a new Lagoon ready Drupal 10",
+		GitRepo:          "https://github.com/lagoon-examples/drupal9-full.git",
+		Branch:           "scaffold",
+		ShortDescription: "Pulls and sets up a new Lagoon ready Drupal 9",
+		Description:      "Pulls and sets up a new Lagoon ready Drupal 9",
 	},
 }
 
@@ -60,6 +60,9 @@ func selectScaffold(scaffold *string) error {
 	prompt := survey.Select{
 		Message: "Select a scaffold to run",
 		Options: getScaffoldsKeys(),
+		Description: func(value string, index int) string {
+			return scaffolds[value].ShortDescription
+		},
 	}
 
 	survey.AskOne(&prompt, scaffold)
