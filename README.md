@@ -29,7 +29,7 @@ Install Laravel (see [installation docs](https://laravel.com/docs/10.x/installat
 If your installation is installed at, say, `/home/myaccount/projects/example-app` you can run the following
 
 ```
-lagoon-init-prot init scaffold --scaffold=laravel --targetdir=/home/myaccount/projects/example-app
+lagoon-scaffold --scaffold=laravel --targetdir=/home/myaccount/projects/example-app
 ```
 
 The command above will ask you to check the values that are going to be used by the installation (you can skip this by
