@@ -1,4 +1,4 @@
-# lagoon-init-prot
+# Lagoon Scaffold
 
 *THIS IS NOT A PRODUCTION READY TOOL*
 
