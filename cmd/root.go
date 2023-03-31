@@ -5,12 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	cp "github.com/otiai10/copy"
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -19,6 +13,13 @@ import (
 	"path/filepath"
 	"sort"
 	"text/template"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	cp "github.com/otiai10/copy"
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var targetDirectory string
@@ -158,7 +159,7 @@ func processTemplates(values interface{}, tempDir string) error {
 
 func readValuesFile(tempDir string, noInteraction bool) (interface{}, error) {
 	//we should find a values file in the root
-	valfilename := tempDir + "/values.yml"
+	valfilename := tempDir + "/.lagoon/values.yml"
 	if _, err := os.Stat(valfilename); errors.Is(err, os.ErrNotExist) {
 		return nil, errors.New(valfilename + " does not exist")
 	}
