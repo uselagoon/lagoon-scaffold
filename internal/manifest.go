@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-const manifestUrl = "https://gist.githubusercontent.com/bomoko/161bbeabc6d17d69e7d52f233cce749c/raw/b63685156b54ef9561aff5ed0eb5adcb559c6659/scaffolds.yml"
+const manifestUrl = "https://raw.githubusercontent.com/uselagoon/lagoon-scaffold/main/internal/assets/scaffolds.yml"
 
 //go:embed assets/scaffolds.yml
 var defaultScaffolds []byte

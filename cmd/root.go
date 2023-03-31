@@ -17,6 +17,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"text/template"
 )
 
@@ -32,6 +33,7 @@ func getScaffoldsKeys() []string {
 	for k := range internal.GetScaffolds() {
 		ret = append(ret, k)
 	}
+	sort.Strings(ret)
 	return ret
 }
 
