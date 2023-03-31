@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_getDefaultScaffolds(t *testing.T) {
+func Test_resolveScaffolds(t *testing.T) {
 	tests := []struct {
 		name    string
 		want    map[string]ScaffoldRepo
