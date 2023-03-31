@@ -9,3 +9,8 @@ scaffolds:
     branch: main
     description: Will add a minimal set of files to an existing Laravel 10 installation
     shortDescription: Will add a minimal set of files to an existing Laravel 10 installation
+  - name: php-init
+    git_repo: https://github.com/bomoko/php-example-simple.git
+    branch: main
+    description: Will add a minimal set of lagoon files to an existing PHP 8 installation
+    shortDescription: Will add a minimal set of lagoon files to an existing PHP 8 installation
