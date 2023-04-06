@@ -106,13 +106,25 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		parsedContent, err := readValuesFile(tDir, noInteraction)
+		//parsedContent, err := readValuesFile(tDir, noInteraction)
+		rawYaml, err := ioutil.ReadFile(tDir + "/.lagoon/values.yml")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		if err = processTemplates(parsedContent, tDir); err != nil {
+		questions, err := internal.UnmarshallSurveyQuestions(rawYaml)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		values, err := internal.RunFromSurveyQuestions(questions, !noInteraction)
+
+		//values := parsedContent
+
+		if err = processTemplates(values, tDir); err != nil {
 			fmt.Println(err)
 			return
 		}
@@ -158,7 +170,7 @@ func processTemplates(values interface{}, tempDir string) error {
 
 func readValuesFile(tempDir string, noInteraction bool) (interface{}, error) {
 	//we should find a values file in the root
-	valfilename := tempDir + "/values.yml"
+	valfilename := tempDir + "/.lagoon/values.yml"
 	if _, err := os.Stat(valfilename); errors.Is(err, os.ErrNotExist) {
 		return nil, errors.New(valfilename + " does not exist")
 	}
