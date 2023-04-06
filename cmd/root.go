@@ -25,9 +25,6 @@ var targetDirectory string
 var scaffold string
 var noInteraction bool
 
-// TODO:
-// Pre/post messages in the scaffold directory to show, for eg, post-init tasks people need to run etc.
-
 func getScaffoldsKeys() []string {
 	var ret []string
 	for k := range internal.GetScaffolds() {
@@ -106,7 +103,6 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		//parsedContent, err := readValuesFile(tDir, noInteraction)
 		rawYaml, err := ioutil.ReadFile(tDir + "/.lagoon/values.yml")
 		if err != nil {
 			fmt.Println(err)
@@ -206,14 +202,6 @@ func readValuesFile(tempDir string, noInteraction bool) (interface{}, error) {
 	}
 	return parsedContent, err
 }
-
-//func showPreMessage(tempDir string) {
-//	valfilename := tempDir + "/pre-message.txt"
-//	if _, err := os.Stat(valfilename); errors.Is(err, os.ErrNotExist) {
-//		return //no pre-message
-//	}
-//
-//}
 
 func showPostMessage(tempDir string) {
 	valfilename := tempDir + "/.lagoon/post-message.txt"
