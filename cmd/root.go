@@ -103,7 +103,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		rawYaml, err := ioutil.ReadFile(tDir + "/.lagoon/values.yml")
+		rawYaml, err := ioutil.ReadFile(tDir + "/.lagoon/flow.yml")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
