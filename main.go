@@ -1,11 +1,14 @@
 package main
 
-import "bomoko/lagoon-init/cmd"
+import (
+	"bomoko/lagoon-init/cmd"
+	"os"
+)
 
 func main() {
 	err := cmd.RootCmd.Execute()
 	if err != nil {
-		panic(err)
+		os.Exit(1)
 	}
 
 }

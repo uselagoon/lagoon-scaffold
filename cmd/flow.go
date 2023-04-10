@@ -15,7 +15,6 @@ var flowCmd = &cobra.Command{
 	Short: "Utilities for visualizing flow details",
 	Long:  `Utilities for visualizing flow details`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		if flowFile == "" {
 			return errors.New("Please provide a file to visualize")
 		} else {
