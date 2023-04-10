@@ -5,12 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	cp "github.com/otiai10/copy"
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -18,6 +12,13 @@ import (
 	"path/filepath"
 	"sort"
 	"text/template"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	cp "github.com/otiai10/copy"
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var targetDirectory string
