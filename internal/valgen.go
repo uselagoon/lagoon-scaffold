@@ -39,6 +39,8 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 		case "text":
 			textQuestion := &survey.Input{
 				Message: question.Prompt,
+				Default: question.Default,
+				Help:    question.Help,
 			}
 			resp := ""
 			if interactive {
@@ -50,7 +52,7 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 			}
 		case "select":
 			selectQuestion := &survey.Select{
-				Message: question.Prompt, Options: question.Options, Default: question.Default,
+				Message: question.Prompt, Options: question.Options, Default: question.Default, Help: question.Help,
 			}
 			resp := ""
 			if interactive {
@@ -62,7 +64,7 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 			}
 		case "conditional": //This isn't strictly a survey question type, but it's a useful way to group questions
 			selectQuestion := &survey.Select{
-				Message: question.Prompt, Options: []string{"yes", "no"}, Default: "no",
+				Message: question.Prompt, Options: []string{"yes", "no"}, Default: "no", Help: question.Help,
 			}
 			resp := ""
 			if interactive {

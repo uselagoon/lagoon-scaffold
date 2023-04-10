@@ -13,7 +13,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/fs"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -47,18 +46,16 @@ func selectScaffold(scaffold *string) error {
 	return nil
 }
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "scaffold",
 	Short: "Lagoon scaffold will pull a new site and fill in the details",
 	Long:  `Lagoon scaffold will pull a new site and fill in the details`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		scaffolds := internal.GetScaffolds()
 
 		if scaffold == "" && noInteraction {
-			fmt.Println("Please select a scaffold\n\n")
-			cmd.Help()
-			return
+			return errors.New("Please select a scaffold")
 		}
 
 		if scaffold == "" {
@@ -68,17 +65,14 @@ var rootCmd = &cobra.Command{
 		repo, ok := scaffolds[scaffold]
 		// If the key exists
 		if !ok {
-			fmt.Printf("Scaffold `%v` does not exist\n\n", scaffold)
-			cmd.Help()
-			return
+			return errors.New(fmt.Sprintf("Scaffold `%v` does not exist", scaffold))
 		}
 
 		//We'll use this when we want to use templates
 		//let's checkout the scaffold into a tmp dir
 		tDir, err := ioutil.TempDir(targetDirectory, "prefix")
 		if err != nil {
-			log.Fatal(err)
-			os.Exit(1)
+			return err
 		}
 		defer cleanRemoveDir(tDir)
 
@@ -93,36 +87,29 @@ var rootCmd = &cobra.Command{
 		})
 
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
 
 		err = cleanRemoveDir(tDir + "/.git")
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
 
 		rawYaml, err := ioutil.ReadFile(tDir + "/.lagoon/flow.yml")
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
 
 		questions, err := internal.UnmarshallSurveyQuestions(rawYaml)
 
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
 
 		values, err := internal.RunFromSurveyQuestions(questions, !noInteraction)
 
-		//values := parsedContent
-
 		if err = processTemplates(values, tDir); err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
 
 		showPostMessage(tDir)
@@ -130,9 +117,10 @@ var rootCmd = &cobra.Command{
 		// For now we're just testing the dir traversal
 		err = cp.Copy(tDir, targetDirectory)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
+
+		return nil
 	},
 }
 
@@ -235,15 +223,15 @@ var listCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
-	rootCmd.PersistentFlags().StringVar(&scaffold, "scaffold", "", "Which scaffold to pull into directory")
-	rootCmd.Flags().BoolVar(&noInteraction, "no-interaction", false, "Don't interactively fill in any values for the scaffold - use defaults")
-	rootCmd.Flags().StringVar(&targetDirectory, "targetdir", "./", "Directory to check out project into - defaults to current directory")
+	RootCmd.AddCommand(listCmd)
+	RootCmd.PersistentFlags().StringVar(&scaffold, "scaffold", "", "Which scaffold to pull into directory")
+	RootCmd.Flags().BoolVar(&noInteraction, "no-interaction", false, "Don't interactively fill in any values for the scaffold - use defaults")
+	RootCmd.Flags().StringVar(&targetDirectory, "targetdir", "./", "Directory to check out project into - defaults to current directory")
 }
 
 func Execute() {
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := RootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
