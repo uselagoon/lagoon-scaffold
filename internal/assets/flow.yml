@@ -1,0 +1,43 @@
+questions:
+  - name: aSelectList
+    help: select one of these options
+    options:
+      - option1
+      - option2
+      - option3
+    type: select
+    required: true
+    prompt: Select one of these options
+    default: option1
+  - name: firstConditional
+    help: This is a conditional question
+    prompt: This is a conditional question
+    type: conditional
+    questions:
+      - name: conditional1Text
+        type: text
+        required: true
+        prompt: This is a sub question
+        default: default value
+      - name: conditional1Text2
+        type: text
+        required: true
+        prompt: This is a sub question
+        default: default value
+      - name: anotherConditional
+        type: conditional
+        required: true
+        prompt: This is a sub question
+        default: default value
+        questions:
+          - name: conditional_question3
+            type: text
+            required: true
+            prompt: This is a sub question
+            default: default value
+          - name: conditional_question4
+            type: text
+            required: true
+            prompt: This is a sub question
+            default: default value
+

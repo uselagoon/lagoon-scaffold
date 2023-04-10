@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -25,9 +24,6 @@ import (
 var targetDirectory string
 var scaffold string
 var noInteraction bool
-
-// TODO:
-// Pre/post messages in the scaffold directory to show, for eg, post-init tasks people need to run etc.
 
 func getScaffoldsKeys() []string {
 	var ret []string
@@ -51,18 +47,16 @@ func selectScaffold(scaffold *string) error {
 	return nil
 }
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "scaffold",
 	Short: "Lagoon scaffold will pull a new site and fill in the details",
 	Long:  `Lagoon scaffold will pull a new site and fill in the details`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		scaffolds := internal.GetScaffolds()
 
 		if scaffold == "" && noInteraction {
-			fmt.Println("Please select a scaffold\n\n")
-			cmd.Help()
-			return
+			return errors.New("Please select a scaffold")
 		}
 
 		if scaffold == "" {
@@ -72,17 +66,14 @@ var rootCmd = &cobra.Command{
 		repo, ok := scaffolds[scaffold]
 		// If the key exists
 		if !ok {
-			fmt.Printf("Scaffold `%v` does not exist\n\n", scaffold)
-			cmd.Help()
-			return
+			return errors.New(fmt.Sprintf("Scaffold `%v` does not exist", scaffold))
 		}
 
 		//We'll use this when we want to use templates
 		//let's checkout the scaffold into a tmp dir
 		tDir, err := ioutil.TempDir(targetDirectory, "prefix")
 		if err != nil {
-			log.Fatal(err)
-			os.Exit(1)
+			return err
 		}
 		defer cleanRemoveDir(tDir)
 
@@ -97,25 +88,29 @@ var rootCmd = &cobra.Command{
 		})
 
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
 
 		err = cleanRemoveDir(tDir + "/.git")
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
 
-		parsedContent, err := readValuesFile(tDir, noInteraction)
+		rawYaml, err := ioutil.ReadFile(tDir + "/.lagoon/flow.yml")
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
 
-		if err = processTemplates(parsedContent, tDir); err != nil {
-			fmt.Println(err)
-			return
+		questions, err := internal.UnmarshallSurveyQuestions(rawYaml)
+
+		if err != nil {
+			return err
+		}
+
+		values, err := internal.RunFromSurveyQuestions(questions, !noInteraction)
+
+		if err = processTemplates(values, tDir); err != nil {
+			return err
 		}
 
 		showPostMessage(tDir)
@@ -123,9 +118,10 @@ var rootCmd = &cobra.Command{
 		// For now we're just testing the dir traversal
 		err = cp.Copy(tDir, targetDirectory)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
+
+		return nil
 	},
 }
 
@@ -196,14 +192,6 @@ func readValuesFile(tempDir string, noInteraction bool) (interface{}, error) {
 	return parsedContent, err
 }
 
-//func showPreMessage(tempDir string) {
-//	valfilename := tempDir + "/pre-message.txt"
-//	if _, err := os.Stat(valfilename); errors.Is(err, os.ErrNotExist) {
-//		return //no pre-message
-//	}
-//
-//}
-
 func showPostMessage(tempDir string) {
 	valfilename := tempDir + "/.lagoon/post-message.txt"
 	if _, err := os.Stat(valfilename); errors.Is(err, os.ErrNotExist) {
@@ -236,15 +224,15 @@ var listCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
-	rootCmd.PersistentFlags().StringVar(&scaffold, "scaffold", "", "Which scaffold to pull into directory")
-	rootCmd.Flags().BoolVar(&noInteraction, "no-interaction", false, "Don't interactively fill in any values for the scaffold - use defaults")
-	rootCmd.Flags().StringVar(&targetDirectory, "targetdir", "./", "Directory to check out project into - defaults to current directory")
+	RootCmd.AddCommand(listCmd)
+	RootCmd.PersistentFlags().StringVar(&scaffold, "scaffold", "", "Which scaffold to pull into directory")
+	RootCmd.Flags().BoolVar(&noInteraction, "no-interaction", false, "Don't interactively fill in any values for the scaffold - use defaults")
+	RootCmd.Flags().StringVar(&targetDirectory, "targetdir", "./", "Directory to check out project into - defaults to current directory")
 }
 
 func Execute() {
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := RootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

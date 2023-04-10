@@ -9,11 +9,12 @@ scaffolds:
     branch: main
     description: Will add a minimal set of files to an existing Laravel 10 installation
     shortDescription: Will add a minimal set of files to an existing Laravel 10 installation
-  - name: rails-init
-    git_repo: https://github.com/CGoodwin90/lagoon-rails-dir.git
-    branch: main
-    description: Will add a minimal set of files to an existing Rails 7 installation
-    shortDescription: Will add a minimal set of files to an existing Rails 7 installation
+# RoR example needs to be converted to flow
+#  - name: rails-init
+#    git_repo: https://github.com/CGoodwin90/lagoon-rails-dir.git
+#    branch: main
+#    description: Will add a minimal set of files to an existing Rails 7 installation
+#    shortDescription: Will add a minimal set of files to an existing Rails 7 installation
   - name: php-init
     git_repo: https://github.com/bomoko/php-example-simple.git
     branch: main
