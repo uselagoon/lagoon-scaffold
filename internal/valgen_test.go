@@ -164,6 +164,33 @@ func Test_runFromSurveyQuestions(t *testing.T) {
 			"project_name": "MyProject",
 		},
 	},
+		{
+			name: "Test Conditional with sub questions",
+			args: args{
+				questions: []surveyQuestion{
+					{
+						Name:     "conditional",
+						Type:     "conditional",
+						Required: true,
+						Prompt:   "Yes or no",
+						Questions: []surveyQuestion{
+							{
+								Name:     "conditional_question",
+								Type:     "text",
+								Required: true,
+								Prompt:   "This is a sub question",
+								Default:  "value",
+							},
+						},
+					},
+				},
+				interactive: false,
+			},
+			want: map[string]interface{}{
+				"conditional":                      false,
+				"conditional.conditional_question": "value",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

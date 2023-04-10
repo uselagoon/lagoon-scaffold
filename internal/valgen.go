@@ -82,13 +82,11 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 			if err != nil {
 				return nil, err
 			}
-			//var vals[question.Name] map[string]interface{}
-			unwoundVals := make(map[string]interface{})
+
+			//unwoundVals := make(map[string]interface{})
 			for k, v := range subVals.(map[string]interface{}) {
-				//vals[question.Name] =
-				unwoundVals[k] = v
+				vals[fmt.Sprintf("%s.%s", question.Name, k)] = v
 			}
-			vals[question.Name] = unwoundVals
 
 		default:
 			return nil, errors.New(fmt.Sprintf("Unknown question type `%v` for question `%v`", question.Type, question.Name))
