@@ -58,7 +58,7 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 			if interactive {
 				survey.AskOne(selectQuestion, &resp, survey.WithValidator(survey.Required))
 			}
-			vals[question.Name] = selectQuestion.Default
+			vals[question.Name] = question.Default
 			if resp != "" {
 				vals[question.Name] = resp
 			}
@@ -76,17 +76,18 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 				subinteractive = true
 			}
 
-			vals[question.Name] = subinteractive
-
 			subVals, err := RunFromSurveyQuestions(question.Questions, subinteractive)
 			if err != nil {
 				return nil, err
 			}
 
-			//unwoundVals := make(map[string]interface{})
+			unwoundVals := subVals.(map[string]interface{})
 			for k, v := range subVals.(map[string]interface{}) {
-				vals[fmt.Sprintf("%s.%s", question.Name, k)] = v
+				unwoundVals[k] = v
 			}
+			unwoundVals["answer"] = subinteractive
+
+			vals[question.Name] = unwoundVals
 
 		default:
 			return nil, errors.New(fmt.Sprintf("Unknown question type `%v` for question `%v`", question.Type, question.Name))
