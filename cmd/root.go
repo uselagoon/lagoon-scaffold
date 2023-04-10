@@ -113,6 +113,15 @@ var RootCmd = &cobra.Command{
 			return err
 		}
 
+		// Let's now dump the output of the flow file into a values file
+		valuesYml, err := yaml.Marshal(values)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(tDir+"/.lagoon/values.yml", valuesYml, 0644); err != nil {
+			return err
+		}
+
 		showPostMessage(tDir)
 
 		// For now we're just testing the dir traversal
