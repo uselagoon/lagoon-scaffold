@@ -25,6 +25,7 @@ var flowCmd = &cobra.Command{
 			}
 			data, _ := internal.UnmarshallSurveyQuestions(flowData)
 			output, _ := internal.FlowToGraph(0, data)
+			fmt.Printf("\n%s:\n\n", flowFile)
 			fmt.Println(output)
 		}
 		return nil
