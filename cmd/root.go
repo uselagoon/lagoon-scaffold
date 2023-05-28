@@ -136,7 +136,7 @@ var RootCmd = &cobra.Command{
 
 func processTemplates(values interface{}, tempDir string) error {
 	return filepath.WalkDir(tempDir, func(p string, d fs.DirEntry, err error) error {
-		if !d.IsDir() && filepath.Ext(p) == ".tmpl" {
+		if !d.IsDir() && filepath.Ext(p) == ".lgtmpl" {
 			templ, err := template.ParseFiles(p)
 			if err != nil {
 				return err
