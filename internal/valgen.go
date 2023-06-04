@@ -1,10 +1,15 @@
 package internal
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v2"
+	"log"
+	"os"
+	"path/filepath"
 )
 
 type surveyQuestion struct {
@@ -18,8 +23,20 @@ type surveyQuestion struct {
 	Questions []surveyQuestion `yaml:"questions,omitempty"`
 }
 
+type valueFileValue struct {
+	Name    string `yaml:"name"`
+	Path    string `yaml:"path"`    //this is going to depend on the type - but let's assume it's grandparent.parent.child
+	Default string `yaml:"default"` // The default if the value can't be found
+}
+
+type valueFile struct {
+	Name   string           `yaml:"name"`
+	Values []valueFileValue `yaml:"values"`
+}
+
 type surveyQuestionsFile struct {
-	Questions []surveyQuestion `yaml:"questions"`
+	Questions  []surveyQuestion `yaml:"questions"`
+	ValueFiles []valueFile      `yaml:"valueFiles"` // This is a list of files we can potentially source values from
 }
 
 func UnmarshallSurveyQuestions(incoming []byte) ([]surveyQuestion, error) {
@@ -30,6 +47,58 @@ func UnmarshallSurveyQuestions(incoming []byte) ([]surveyQuestion, error) {
 		return nil, err
 	}
 	return incomingMap.Questions, nil
+}
+
+func loadValuesFromValuesFiles(files []string) (map[string]interface{}, error) {
+	vals := make(map[string]interface{})
+	for _, file := range files {
+		f, err := os.Stat(file)
+		if err != nil {
+			//this might be okay, just log it
+			log.Default().Printf("Unable to find file `%v`", file)
+		}
+		extension := filepath.Ext(f.Name())
+		switch extension {
+		case ".env":
+			myEnv, err := godotenv.Read(file)
+			if err != nil {
+				log.Default().Printf("Unable to read env file `%v`", file)
+				continue
+			}
+			vals[f.Name()] = myEnv
+		case ".json":
+			fileData, err := os.ReadFile(file)
+			if err != nil {
+				log.Default().Printf("Unable to read json file `%v`", file)
+				continue
+			}
+			var v interface{}
+			err = json.Unmarshal(fileData, &v)
+			if err != nil {
+				log.Default().Printf("Unable to unmarshal json file `%v`", file)
+				continue
+			}
+			vals[f.Name()] = v
+		case ".yml":
+			fallthrough
+		case ".yaml":
+			fileData, err := os.ReadFile(file)
+			if err != nil {
+				log.Default().Printf("Unable to read yaml file `%v`", file)
+				continue
+			}
+			var v interface{}
+			err = yaml.Unmarshal(fileData, &v)
+			if err != nil {
+				log.Default().Printf("Unable to unmarshal json file `%v`", file)
+				continue
+			}
+			vals[f.Name()] = v
+		default:
+			return nil, errors.New(fmt.Sprintf("Unsupported file comprehension for `%v`", file))
+		}
+	}
+	return vals, nil
 }
 
 func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (interface{}, error) {
