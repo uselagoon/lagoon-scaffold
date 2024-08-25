@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -22,12 +23,15 @@ import (
 )
 
 var targetDirectory string
+var localManifest string
 var scaffold string
 var noInteraction bool
+var inputFile string
 
 func getScaffoldsKeys() []string {
+	scaffolds, _ := internal.GetScaffolds(localManifest)
 	var ret []string
-	for k := range internal.GetScaffolds() {
+	for k := range scaffolds {
 		ret = append(ret, k)
 	}
 	sort.Strings(ret)
@@ -35,11 +39,15 @@ func getScaffoldsKeys() []string {
 }
 
 func selectScaffold(scaffold *string) error {
+	scaffolds, err := internal.GetScaffolds(localManifest)
+	if err != nil {
+		return err
+	}
 	prompt := survey.Select{
 		Message: "Select a scaffold to run",
 		Options: getScaffoldsKeys(),
 		Description: func(value string, index int) string {
-			return internal.GetScaffolds()[value].ShortDescription
+			return scaffolds[value].ShortDescription
 		},
 	}
 
@@ -53,7 +61,12 @@ var RootCmd = &cobra.Command{
 	Long:  `Lagoon scaffold will pull a new site and fill in the details`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		scaffolds := internal.GetScaffolds()
+		scaffolds, err := internal.GetScaffolds(localManifest)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
 		if scaffold == "" && noInteraction {
 			return errors.New("Please select a scaffold")
@@ -107,7 +120,23 @@ var RootCmd = &cobra.Command{
 			return err
 		}
 
-		values, err := internal.RunFromSurveyQuestions(questions, !noInteraction)
+		var values interface{}
+
+		if inputFile == "" {
+			values, err = internal.RunFromSurveyQuestions(questions, !noInteraction)
+			if err != nil {
+				log.Fatalf("Error running survey: %v", err)
+			}
+		} else { // we're going to attempt to load these values from the file
+			yamlFile, err := ioutil.ReadFile(inputFile)
+			if err != nil {
+				log.Fatalf("Error reading YAML file: %v", err)
+			}
+			err = yaml.Unmarshal(yamlFile, &values)
+			if err != nil {
+				log.Fatalf("Error parsing YAML file: %v", err)
+			}
+		}
 
 		if err = processTemplates(values, tDir); err != nil {
 			return err
@@ -225,8 +254,9 @@ var listCmd = &cobra.Command{
 	Long:    "Lists all currently supported Lagoon scaffolds",
 	Example: "lagoon-init-prot list",
 	Run: func(cmd *cobra.Command, args []string) {
+		scaffolds, _ := internal.GetScaffolds(localManifest)
 		fmt.Println("We currently support the following:")
-		for pagage := range internal.GetScaffolds() {
+		for pagage := range scaffolds {
 			fmt.Println(pagage)
 		}
 	},
@@ -237,6 +267,8 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&scaffold, "scaffold", "", "Which scaffold to pull into directory")
 	RootCmd.Flags().BoolVar(&noInteraction, "no-interaction", false, "Don't interactively fill in any values for the scaffold - use defaults")
 	RootCmd.Flags().StringVar(&targetDirectory, "targetdir", "./", "Directory to check out project into - defaults to current directory")
+	RootCmd.Flags().StringVar(&localManifest, "manifest", "", "Custom local manifest file for scaffold list - defaults to an empty string")
+	RootCmd.Flags().StringVar(&inputFile, "values", "", "A Yaml file that provides defaults/answers for a scaffold - can be used in automation")
 }
 
 func Execute() {
