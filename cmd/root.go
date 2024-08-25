@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -25,6 +26,7 @@ var targetDirectory string
 var localManifest string
 var scaffold string
 var noInteraction bool
+var inputFile string
 
 func getScaffoldsKeys() []string {
 	scaffolds, _ := internal.GetScaffolds(localManifest)
@@ -118,7 +120,23 @@ var RootCmd = &cobra.Command{
 			return err
 		}
 
-		values, err := internal.RunFromSurveyQuestions(questions, !noInteraction)
+		var values interface{}
+
+		if inputFile == "" {
+			values, err = internal.RunFromSurveyQuestions(questions, !noInteraction)
+			if err != nil {
+				log.Fatalf("Error running survey: %v", err)
+			}
+		} else { // we're going to attempt to load these values from the file
+			yamlFile, err := ioutil.ReadFile(inputFile)
+			if err != nil {
+				log.Fatalf("Error reading YAML file: %v", err)
+			}
+			err = yaml.Unmarshal(yamlFile, &values)
+			if err != nil {
+				log.Fatalf("Error parsing YAML file: %v", err)
+			}
+		}
 
 		if err = processTemplates(values, tDir); err != nil {
 			return err
@@ -250,6 +268,7 @@ func init() {
 	RootCmd.Flags().BoolVar(&noInteraction, "no-interaction", false, "Don't interactively fill in any values for the scaffold - use defaults")
 	RootCmd.Flags().StringVar(&targetDirectory, "targetdir", "./", "Directory to check out project into - defaults to current directory")
 	RootCmd.Flags().StringVar(&localManifest, "manifest", "", "Custom local manifest file for scaffold list - defaults to an empty string")
+	RootCmd.Flags().StringVar(&inputFile, "values", "", "A Yaml file that provides defaults/answers for a scaffold - can be used in automation")
 }
 
 func Execute() {
