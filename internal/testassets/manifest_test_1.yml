@@ -1,0 +1,6 @@
+scaffolds:
+  - name: test1
+    git_repo: https://github.com/lagoon-examples/test1.git
+    branch: test1_branch
+    description: test1_description
+    shortDescription: test1_shortDescription

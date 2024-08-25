@@ -5,6 +5,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
+	"os"
 )
 
 const manifestUrl = "https://raw.githubusercontent.com/uselagoon/lagoon-scaffold/main/internal/assets/scaffolds.yml"
@@ -76,8 +77,25 @@ func remapScaffoldLoader(loader *ScaffoldLoader) map[string]ScaffoldRepo {
 	return remapped
 }
 
-func GetScaffolds() map[string]ScaffoldRepo {
-	return resolveScaffolds(manifestUrl)
+func GetScaffolds(localmanifest string) (map[string]ScaffoldRepo, error) {
+
+	if localmanifest != "" { // we try load up a manifest given locally
+		// try open and read the file
+
+		loader := &ScaffoldLoader{
+			Scaffolds: make([]ScaffoldRepo, 0),
+		}
+		dat, err := os.ReadFile(localmanifest)
+		err = yaml.Unmarshal(dat, loader)
+		if err != nil {
+			return map[string]ScaffoldRepo{}, err
+		}
+
+		return remapScaffoldLoader(loader), nil
+
+	}
+
+	return resolveScaffolds(manifestUrl), nil
 }
 
 type ScaffoldRepo struct {
