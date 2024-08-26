@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -27,6 +28,7 @@ var localManifest string
 var scaffold string
 var noInteraction bool
 var inputFile string
+var privateKeyFile string
 
 func getScaffoldsKeys() []string {
 	scaffolds, _ := internal.GetScaffolds(localManifest)
@@ -92,13 +94,31 @@ var RootCmd = &cobra.Command{
 
 		fmt.Println(tDir)
 
-		_, err = git.PlainClone(tDir, false, &git.CloneOptions{
+		// Here we deal with sshkeys, if one is passed to us
+
+		cloneOptions := &git.CloneOptions{
 			URL: repo.GitRepo,
 			//Depth:         1,
 			ReferenceName: plumbing.NewBranchReferenceName(repo.Branch),
 			SingleBranch:  true,
 			Progress:      os.Stdout,
-		})
+		}
+
+		if privateKeyFile != "" {
+			_, err := os.Stat(privateKeyFile)
+			if err != nil {
+				log.Fatalf("read file %s failed %s\n", privateKeyFile, err.Error())
+			}
+
+			publicKeys, err := ssh.NewPublicKeysFromFile("git", privateKeyFile, "")
+			if err != nil {
+				log.Fatalf("generate publickeys failed: %s\n", err.Error())
+			}
+
+			cloneOptions.Auth = publicKeys
+		}
+
+		_, err = git.PlainClone(tDir, false, cloneOptions)
 
 		if err != nil {
 			return err
@@ -269,6 +289,8 @@ func init() {
 	RootCmd.Flags().StringVar(&targetDirectory, "targetdir", "./", "Directory to check out project into - defaults to current directory")
 	RootCmd.Flags().StringVar(&localManifest, "manifest", "", "Custom local manifest file for scaffold list - defaults to an empty string")
 	RootCmd.Flags().StringVar(&inputFile, "values", "", "A Yaml file that provides defaults/answers for a scaffold - can be used in automation")
+	//privateKeyFile
+	RootCmd.Flags().StringVar(&privateKeyFile, "privatekey", "", "If private repository is used, this points to the private key used to access it")
 }
 
 func Execute() {
