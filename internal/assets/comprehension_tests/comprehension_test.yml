@@ -1,0 +1,10 @@
+docker-compose-yaml: docker-compose.yml
+project: "lagoon-sync"
+lagoon-sync:
+  ssh:
+    host: "example.ssh"
+    port: "22"
+    verbose: true
+  mariadb:
+    config:
+      hostname: "${MARIADB_HOST:-mariadb}"
