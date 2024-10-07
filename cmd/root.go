@@ -5,7 +5,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
+	cp "github.com/otiai10/copy"
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -13,14 +19,6 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
-	"text/template"
-
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	cp "github.com/otiai10/copy"
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 var targetDirectory string
@@ -186,7 +184,7 @@ var RootCmd = &cobra.Command{
 func processTemplates(values interface{}, tempDir string) error {
 	return filepath.WalkDir(tempDir, func(p string, d fs.DirEntry, err error) error {
 		if !d.IsDir() && filepath.Ext(p) == ".lgtmpl" {
-			templ, err := template.ParseFiles(p)
+			templ, err := internal.GetTemplate().ParseFiles(p)
 			if err != nil {
 				return err
 			}
