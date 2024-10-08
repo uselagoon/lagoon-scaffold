@@ -14,6 +14,6 @@ var TemplatingExtensions = template.FuncMap{
 	},
 }
 
-func GetTemplate() *template.Template {
-	return template.New("LagoonsyncTemplate").Funcs(TemplatingExtensions)
+func GetTemplate(name string) *template.Template {
+	return template.New(name).Funcs(TemplatingExtensions)
 }

@@ -41,7 +41,7 @@ func TestGetTemplate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ct := GetTemplate()
+		ct := GetTemplate("")
 		pt, err := ct.Parse(test.template)
 		var buf bytes.Buffer
 		err = pt.Execute(&buf, test.input)
