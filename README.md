@@ -101,3 +101,17 @@ Once this is done, we copy all the files from the scaffold directory into the ta
 If there is a `.lagoon/post-message.txt` file, this is shown to the user.
 
 Finally, the temporary directory with the scaffolding is removed.
+
+## Values from exiting files
+
+When doing something like importing from an existing project, we might sometimes need to read values from existing files.
+
+This is achieved using the `valueFiles` section in the flow file.
+We support `.env`, `.json`, and `.yml` files for the moment. 
+
+If you list a particular file name in the `valueFiles` section, we will attempt to read the file and parse it as the appropriate type.
+These values will then be available to the template files when they're hydrated.
+
+### example
+
+```

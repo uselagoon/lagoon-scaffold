@@ -1,0 +1,10 @@
+{
+  "name": "laravel/laravel",
+  "type": "project",
+  "keywords": ["framework", "testing"],
+  "require": {
+    "php": "^8.1"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
