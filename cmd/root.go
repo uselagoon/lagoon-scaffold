@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/charmbracelet/huh"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
@@ -43,15 +44,31 @@ func selectScaffold(scaffold *string) error {
 	if err != nil {
 		return err
 	}
-	prompt := survey.Select{
-		Message: "Select a scaffold to run",
-		Options: getScaffoldsKeys(),
-		Description: func(value string, index int) string {
-			return scaffolds[value].ShortDescription
-		},
+	//prompt := survey.Select{
+	//	Message: "Select a scaffold to run",
+	//	Options: getScaffoldsKeys(),
+	//	Description: func(value string, index int) string {
+	//		return scaffolds[value].ShortDescription
+	//	},
+	//}
+	//
+	//survey.AskOne(&prompt, scaffold)
+
+	prompt := huh.NewSelect[string]()
+	options := make([]huh.Option[string], len(scaffolds))
+	for i, key := range getScaffoldsKeys() {
+		options[i] = huh.Option[string]{
+			Value: key,
+			Key:   key,
+		}
+	}
+	prompt.Options(options...).Title("Select a scaffold to run").
+		Value(scaffold)
+
+	if err := prompt.Run(); err != nil {
+		return err
 	}
 
-	survey.AskOne(&prompt, scaffold)
 	return nil
 }
 
@@ -141,6 +158,7 @@ var RootCmd = &cobra.Command{
 		var values interface{}
 
 		if inputFile == "" {
+			//values, err = internal.RunFromSurveyQuestions(questions, !noInteraction)
 			values, err = internal.RunFromSurveyQuestions(questions, !noInteraction)
 			if err != nil {
 				log.Fatalf("Error running survey: %v", err)

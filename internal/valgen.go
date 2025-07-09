@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/charmbracelet/huh"
 	"gopkg.in/yaml.v2"
 )
 
@@ -33,6 +34,80 @@ func UnmarshallSurveyQuestions(incoming []byte) ([]surveyQuestion, error) {
 }
 
 func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (interface{}, error) {
+	vals := make(map[string]interface{})
+	for _, question := range questions {
+
+		switch question.Type {
+		case "text":
+			val := question.Default
+			prompt := huh.NewInput().
+				Title(question.Prompt).
+				Description(question.Help).
+				Value(&val)
+
+			if interactive {
+				if err := prompt.Run(); err != nil {
+					return nil, err
+				}
+			}
+			vals[question.Name] = val
+		case "select":
+			val := question.Default
+			theSelect := huh.NewSelect[string]()
+			options := make([]huh.Option[string], len(question.Options))
+			for i, opt := range question.Options {
+				options[i] = huh.Option[string]{
+					Value: opt,
+					Key:   opt,
+				}
+			}
+			theSelect.Title(question.Prompt).
+				Description(question.Help).
+				Options(options...).
+				Value(&val)
+
+			if interactive {
+				if err := theSelect.Run(); err != nil {
+					return nil, err
+				}
+			}
+			vals[question.Name] = val
+		case "conditional": //This isn't strictly a survey question type, but it's a useful way to group questions
+			val := "no"
+			conditionalSelect := huh.NewSelect[string]()
+			conditionalSelect.Title(question.Prompt).
+				Description(question.Help).
+				Options(
+					huh.Option[string]{Value: "yes", Key: "yes"},
+					huh.Option[string]{Value: "no", Key: "no"},
+				).
+				Value(&val)
+			if interactive {
+				if err := conditionalSelect.Run(); err != nil {
+					return nil, err
+				}
+			}
+			subinteractive := false
+			if val == "yes" {
+				subinteractive = true
+			}
+			subVals, err := RunFromSurveyQuestions(question.Questions, subinteractive)
+			if err != nil {
+				return nil, err
+
+			}
+			unwoundVals := subVals.(map[string]interface{})
+			for k, v := range unwoundVals {
+				unwoundVals[k] = v
+			}
+			vals["answer"] = subinteractive
+			vals[question.Name] = unwoundVals
+		}
+	}
+	return vals, nil
+}
+
+func OldRunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (interface{}, error) {
 	vals := make(map[string]interface{})
 	for _, question := range questions {
 		switch question.Type {
@@ -76,7 +151,7 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 				subinteractive = true
 			}
 
-			subVals, err := RunFromSurveyQuestions(question.Questions, subinteractive)
+			subVals, err := OldRunFromSurveyQuestions(question.Questions, subinteractive)
 			if err != nil {
 				return nil, err
 			}
