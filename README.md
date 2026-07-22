@@ -6,17 +6,19 @@ It is a simple script that points to a number of git repos that contain scaffold
 
 ## Usage example
 
-### Lagoonizing a new Laravel 10 project
+### Lagoonizing a new Rails 7 project
 
-Install Laravel (see [installation docs](https://laravel.com/docs/10.x/installation#getting-started-on-linux)).
+Install Rails (see [installation docs](https://guides.rubyonrails.org/getting_started.html)).
 If your installation is installed at, say, `/home/myaccount/projects/example-app` you can run the following
 
 ```
-lagoon-scaffold --scaffold=laravel --targetdir=/home/myaccount/projects/example-app
+lagoon-scaffold --scaffold=rails-init --targetdir=/home/myaccount/projects/example-app
 ```
 
-Running the above will attempt to install the files required by a Laravel project into the target directory.
-Your Laravel project should now be ready to be pushed up to Lagoon.
+Running the above will attempt to install the files required by a Rails project into the target directory.
+Your Rails project should now be ready to be pushed up to Lagoon.
+
+Run `lagoon-scaffold list` to see all available scaffolds.
 
 Omitting the `--scaffold` option will prompt you to select a scaffold from a list.
 

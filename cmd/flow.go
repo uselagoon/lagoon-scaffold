@@ -1,11 +1,12 @@
 package cmd
 
 import (
-	"bomoko/lagoon-init/internal"
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
-	"io/ioutil"
+	"github.com/uselagoon/lagoon-scaffold/internal"
 )
 
 var flowFile string
@@ -16,17 +17,22 @@ var flowCmd = &cobra.Command{
 	Long:  `Utilities for visualizing flow details`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if flowFile == "" {
-			return errors.New("Please provide a file to visualize")
-		} else {
-			flowData, err := ioutil.ReadFile(flowFile)
-			if err != nil {
-				return fmt.Errorf("Error reading file: ", err)
-			}
-			data, _ := internal.UnmarshallSurveyQuestions(flowData)
-			output, _ := internal.FlowToGraph(0, data)
-			fmt.Printf("\n%s:\n\n", flowFile)
-			fmt.Println(output)
+			return errors.New("please provide a file to visualize")
 		}
+		flowData, err := os.ReadFile(flowFile)
+		if err != nil {
+			return fmt.Errorf("error reading file: %w", err)
+		}
+		data, err := internal.UnmarshallSurveyQuestions(flowData)
+		if err != nil {
+			return fmt.Errorf("error parsing flow file: %w", err)
+		}
+		output, err := internal.FlowToGraph(0, data)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\n%s:\n\n", flowFile)
+		fmt.Println(output)
 		return nil
 	},
 }
