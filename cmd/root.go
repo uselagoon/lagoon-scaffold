@@ -1,24 +1,22 @@
 package cmd
 
 import (
-	"bomoko/lagoon-init/internal"
 	"bytes"
-	"errors"
 	"fmt"
+	"io/fs"
+	"log"
+	"os"
+	"path/filepath"
+	"sort"
+
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	cp "github.com/otiai10/copy"
 	"github.com/spf13/cobra"
+	"github.com/uselagoon/lagoon-scaffold/internal"
 	"gopkg.in/yaml.v2"
-	"io/fs"
-	"io/ioutil"
-	"log"
-	"os"
-	"path"
-	"path/filepath"
-	"sort"
 )
 
 var targetDirectory string
@@ -51,12 +49,11 @@ func selectScaffold(scaffold *string) error {
 		},
 	}
 
-	survey.AskOne(&prompt, scaffold)
-	return nil
+	return survey.AskOne(&prompt, scaffold)
 }
 
 var RootCmd = &cobra.Command{
-	Use:   "scaffold",
+	Use:   "lagoon-scaffold",
 	Short: "Lagoon scaffold will pull a new site and fill in the details",
 	Long:  `Lagoon scaffold will pull a new site and fill in the details`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -69,28 +66,27 @@ var RootCmd = &cobra.Command{
 		}
 
 		if scaffold == "" && noInteraction {
-			return errors.New("Please select a scaffold")
+			return fmt.Errorf("please select a scaffold")
 		}
 
 		if scaffold == "" {
-			selectScaffold(&scaffold)
+			if err := selectScaffold(&scaffold); err != nil {
+				return err
+			}
 		}
 
 		repo, ok := scaffolds[scaffold]
 		// If the key exists
 		if !ok {
-			return errors.New(fmt.Sprintf("Scaffold `%v` does not exist", scaffold))
+			return fmt.Errorf("scaffold `%v` does not exist", scaffold)
 		}
 
-		//We'll use this when we want to use templates
 		//let's checkout the scaffold into a tmp dir
-		tDir, err := ioutil.TempDir(targetDirectory, "prefix")
+		tDir, err := os.MkdirTemp(targetDirectory, ".lagoon-scaffold-")
 		if err != nil {
 			return err
 		}
 		defer cleanRemoveDir(tDir)
-
-		fmt.Println(tDir)
 
 		// Here we deal with sshkeys, if one is passed to us
 
@@ -122,12 +118,12 @@ var RootCmd = &cobra.Command{
 			return err
 		}
 
-		err = cleanRemoveDir(tDir + "/.git")
+		err = cleanRemoveDir(filepath.Join(tDir, ".git"))
 		if err != nil {
 			return err
 		}
 
-		rawYaml, err := ioutil.ReadFile(tDir + "/.lagoon/flow.yml")
+		rawYaml, err := os.ReadFile(filepath.Join(tDir, ".lagoon/flow.yml"))
 		if err != nil {
 			return err
 		}
@@ -146,7 +142,7 @@ var RootCmd = &cobra.Command{
 				log.Fatalf("Error running survey: %v", err)
 			}
 		} else { // we're going to attempt to load these values from the file
-			yamlFile, err := ioutil.ReadFile(inputFile)
+			yamlFile, err := os.ReadFile(inputFile)
 			if err != nil {
 				log.Fatalf("Error reading YAML file: %v", err)
 			}
@@ -165,24 +161,21 @@ var RootCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(tDir+"/.lagoon/values.yml", valuesYml, 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(tDir, ".lagoon/values.yml"), valuesYml, 0644); err != nil {
 			return err
 		}
 
 		showPostMessage(tDir)
 
-		// For now we're just testing the dir traversal
-		err = cp.Copy(tDir, targetDirectory)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return cp.Copy(tDir, targetDirectory)
 	},
 }
 
 func processTemplates(values interface{}, tempDir string) error {
 	return filepath.WalkDir(tempDir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if !d.IsDir() && filepath.Ext(p) == ".lgtmpl" {
 			templ, err := internal.GetTemplate(filepath.Base(p)).ParseFiles(p)
 			if err != nil {
@@ -194,7 +187,7 @@ func processTemplates(values interface{}, tempDir string) error {
 				return err
 			}
 
-			outputName := p[:len(p)-len(path.Ext(p))]
+			outputName := p[:len(p)-len(filepath.Ext(p))]
 			err = os.WriteFile(outputName, buf.Bytes(), 0644)
 			if err != nil {
 				return err
@@ -209,55 +202,10 @@ func processTemplates(values interface{}, tempDir string) error {
 	})
 }
 
-func readValuesFile(tempDir string, noInteraction bool) (interface{}, error) {
-	//we should find a values file in the root
-	valfilename := tempDir + "/.lagoon/values.yml"
-	if _, err := os.Stat(valfilename); errors.Is(err, os.ErrNotExist) {
-		return nil, errors.New(valfilename + " does not exist")
-	}
-
-	valuesDefaults, err := os.ReadFile(valfilename)
-	if err != nil {
-		return nil, err
-	}
-
-	var content string
-
-	if !noInteraction {
-		//let's open and edit the values file - this can move into proper survey questions in the future
-		prompt := &survey.Editor{
-			Renderer:      survey.Renderer{},
-			Message:       "We will now open your values file for editing",
-			Default:       string(valuesDefaults),
-			Help:          "",
-			Editor:        "",
-			HideDefault:   true,
-			AppendDefault: true,
-			FileName:      "*.yml",
-		}
-		survey.AskOne(prompt, &content)
-	} else { //we simply use the defaults...
-		content = string(valuesDefaults)
-	}
-
-	var parsedContent interface{}
-	err = yaml.Unmarshal([]byte(content), &parsedContent)
-	if err != nil {
-		return nil, err
-	}
-	return parsedContent, err
-}
-
 func showPostMessage(tempDir string) {
-	valfilename := tempDir + "/.lagoon/post-message.txt"
-	if _, err := os.Stat(valfilename); errors.Is(err, os.ErrNotExist) {
-		return //no post-message
-	}
-
-	text, err := ioutil.ReadFile(valfilename)
+	text, err := os.ReadFile(filepath.Join(tempDir, ".lagoon/post-message.txt"))
 	if err != nil {
-		fmt.Println(err)
-		return
+		return //no post-message
 	}
 	fmt.Print(string(text))
 }
@@ -270,12 +218,11 @@ var listCmd = &cobra.Command{
 	Use:     "list",
 	Short:   "List currently supported templates",
 	Long:    "Lists all currently supported Lagoon scaffolds",
-	Example: "lagoon-init-prot list",
+	Example: "lagoon-scaffold list",
 	Run: func(cmd *cobra.Command, args []string) {
-		scaffolds, _ := internal.GetScaffolds(localManifest)
 		fmt.Println("We currently support the following:")
-		for pagage := range scaffolds {
-			fmt.Println(pagage)
+		for _, name := range getScaffoldsKeys() {
+			fmt.Println(name)
 		}
 	},
 }
@@ -287,7 +234,6 @@ func init() {
 	RootCmd.Flags().StringVar(&targetDirectory, "targetdir", "./", "Directory to check out project into - defaults to current directory")
 	RootCmd.Flags().StringVar(&localManifest, "manifest", "", "Custom local manifest file for scaffold list - defaults to an empty string")
 	RootCmd.Flags().StringVar(&inputFile, "values", "", "A Yaml file that provides defaults/answers for a scaffold - can be used in automation")
-	//privateKeyFile
 	RootCmd.Flags().StringVar(&privateKeyFile, "privatekey", "", "If private repository is used, this points to the private key used to access it")
 }
 

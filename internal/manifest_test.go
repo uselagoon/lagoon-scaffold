@@ -14,19 +14,19 @@ func Test_resolveScaffolds(t *testing.T) {
 		{
 			name: "Test getDefaultScaffold",
 			want: map[string]ScaffoldRepo{
-				"laravel-init": {
-					Name:             "laravel-init",
-					GitRepo:          "https://github.com/bomoko/lagoon-laravel-dir.git",
-					Branch:           "main",
-					ShortDescription: "Will add a minimal set of files to an existing Laravel 10 installation",
-					Description:      "Will add a minimal set of files to an existing Laravel 10 installation",
-				},
 				"drupal-9": {
 					Name:             "drupal-9",
 					GitRepo:          "https://github.com/lagoon-examples/drupal9-full.git",
 					Branch:           "scaffold",
 					ShortDescription: "Pulls and sets up a new Lagoon ready Drupal 9",
 					Description:      "Pulls and sets up a new Lagoon ready Drupal 9",
+				},
+				"rails-init": {
+					Name:             "rails-init",
+					GitRepo:          "https://github.com/CGoodwin90/lagoon-rails-dir.git",
+					Branch:           "main",
+					ShortDescription: "Will add a minimal set of files to an existing Rails 7 installation",
+					Description:      "Will add a minimal set of files to an existing Rails 7 installation",
 				},
 			},
 		},

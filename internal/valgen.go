@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"errors"
 	"fmt"
+
 	"github.com/AlecAivazis/survey/v2"
 	"gopkg.in/yaml.v2"
 )
@@ -44,7 +44,9 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 			}
 			resp := ""
 			if interactive {
-				survey.AskOne(textQuestion, &resp, survey.WithValidator(survey.Required))
+				if err := survey.AskOne(textQuestion, &resp, survey.WithValidator(survey.Required)); err != nil {
+					return nil, err
+				}
 			}
 			vals[question.Name] = question.Default
 			if resp != "" {
@@ -56,7 +58,9 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 			}
 			resp := ""
 			if interactive {
-				survey.AskOne(selectQuestion, &resp, survey.WithValidator(survey.Required))
+				if err := survey.AskOne(selectQuestion, &resp, survey.WithValidator(survey.Required)); err != nil {
+					return nil, err
+				}
 			}
 			vals[question.Name] = question.Default
 			if resp != "" {
@@ -68,13 +72,12 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 			}
 			resp := ""
 			if interactive {
-				survey.AskOne(selectQuestion, &resp, survey.WithValidator(survey.Required))
+				if err := survey.AskOne(selectQuestion, &resp, survey.WithValidator(survey.Required)); err != nil {
+					return nil, err
+				}
 			}
 
-			subinteractive := false
-			if resp == "yes" {
-				subinteractive = true
-			}
+			subinteractive := resp == "yes"
 
 			subVals, err := RunFromSurveyQuestions(question.Questions, subinteractive)
 			if err != nil {
@@ -82,15 +85,12 @@ func RunFromSurveyQuestions(questions []surveyQuestion, interactive bool) (inter
 			}
 
 			unwoundVals := subVals.(map[string]interface{})
-			for k, v := range subVals.(map[string]interface{}) {
-				unwoundVals[k] = v
-			}
 			unwoundVals["answer"] = subinteractive
 
 			vals[question.Name] = unwoundVals
 
 		default:
-			return nil, errors.New(fmt.Sprintf("Unknown question type `%v` for question `%v`", question.Type, question.Name))
+			return nil, fmt.Errorf("unknown question type `%v` for question `%v`", question.Type, question.Name)
 		}
 	}
 	return vals, nil

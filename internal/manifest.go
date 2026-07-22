@@ -2,10 +2,12 @@ package internal
 
 import (
 	_ "embed"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
+
+	"gopkg.in/yaml.v2"
 )
 
 const manifestUrl = "https://raw.githubusercontent.com/uselagoon/lagoon-scaffold/main/internal/assets/scaffolds.yml"
@@ -20,7 +22,11 @@ func getManifestFromUrl(manifestUrl string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("fetching manifest from %s returned status %d", manifestUrl, resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +92,10 @@ func GetScaffolds(localmanifest string) (map[string]ScaffoldRepo, error) {
 			Scaffolds: make([]ScaffoldRepo, 0),
 		}
 		dat, err := os.ReadFile(localmanifest)
-		err = yaml.Unmarshal(dat, loader)
 		if err != nil {
+			return map[string]ScaffoldRepo{}, err
+		}
+		if err := yaml.Unmarshal(dat, loader); err != nil {
 			return map[string]ScaffoldRepo{}, err
 		}
 

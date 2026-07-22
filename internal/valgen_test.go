@@ -187,8 +187,10 @@ func Test_runFromSurveyQuestions(t *testing.T) {
 				interactive: false,
 			},
 			want: map[string]interface{}{
-				"conditional":                      false,
-				"conditional.conditional_question": "value",
+				"conditional": map[string]interface{}{
+					"answer":               false,
+					"conditional_question": "value",
+				},
 			},
 		},
 	}
